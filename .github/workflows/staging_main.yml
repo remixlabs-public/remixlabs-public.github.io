@@ -1,4 +1,4 @@
-name: Re-deploy staging to main every six minutes
+name: Deploy staging to main every six minutes
 
 # Run every 6 minutes
 on:
