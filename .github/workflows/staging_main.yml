@@ -3,7 +3,7 @@ name: Deploy staging to main every six minutes
 # Run every 6 minutes
 on:
   schedule:
-  - cron: "*/6 * * * *"
+    - cron: "*/6 * * * *"
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
