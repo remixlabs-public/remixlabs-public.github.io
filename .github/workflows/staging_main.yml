@@ -1,9 +1,10 @@
-name: Deploy staging to main every six minutes
+name: Deploy staging to main every push
 
 # Run every 6 minutes
 on:
-  schedule:
-    - cron: "*/6 * * * *"
+  push:
+    branches:
+      - 'staging'
   
   workflow_dispatch:
 
