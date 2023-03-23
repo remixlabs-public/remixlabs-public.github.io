@@ -21,7 +21,7 @@
         const remixFile = urlParams.get("filename");
 
         if (remixFile !== "") {
-            getWasmDataUrlFromRemixFile("files/" + filename + ".remix")
+            getWasmDataUrlFromRemixFile("files/" + remixFile + ".remix")
                 .then(({ url, app, runtimeJson }) => {
                     let remixElement = document.createElement("rmx-runtime");
                     remixElement.setAttribute("code", url);
