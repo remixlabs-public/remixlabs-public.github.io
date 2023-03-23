@@ -18,10 +18,10 @@
     <script src="dotremix.js"></script>
     <script>
         const urlParams = new URLSearchParams(window.location.search)
-        const remixFile = urlParams.get("file");
+        const remixFile = urlParams.get("filename");
 
         if (remixFile !== "") {
-            getWasmDataUrlFromRemixFile(remixFile)
+            getWasmDataUrlFromRemixFile("files/" + filename + ".remix")
                 .then(({ url, app, runtimeJson }) => {
                     let remixElement = document.createElement("rmx-runtime");
                     remixElement.setAttribute("code", url);
