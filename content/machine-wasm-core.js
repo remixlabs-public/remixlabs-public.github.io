@@ -515,9 +515,9 @@ class State {
         this.drvEcho = new Array();
         this.ffiOverride = {};
         this.mixCode = new Map();
+        this.mixCodeName = new Map();
         this.standalone = false;     // whether there is no amp
         this.postponedError = null;
-        this.haveByteCode = false;   // and not wasm code
         this.wasm = null;                 // the ABI object
         this.cached_main_module = undefined;   // the module mixrt.wasm
         this.localFFIs = {}; // maps coroutines to infos about local FFIs
@@ -591,6 +591,7 @@ class Switchboard {
         this.lock_done = false;
         this.chan_driver = chan_driver;
         this.chan_async = chan_async;
+        this.FFIname = "";
     }
 
     isSwitchboard() {
@@ -599,7 +600,12 @@ class Switchboard {
 
     async driverRequest(f) {
         this.enqueue("driver", f);
-        if (!this.lock && (this.active == "idle" || this.active == "driver")) {
+        if (!this.lock && (this.active == "idle" || this.active == "driver" || this.FFIname == "$loader_loadLibrary")) {
+            // why permitting $loader_loadLibrary: this FFI wants to load
+            // additional libs. For this, amp sends us messages on driver,
+            // namely DrvSendCode and DrvLinkCode, while the FFI is being
+            // executed. Normally we don't allow that the processing of a
+            // sync FFI is interrupted, but this is a well-known exception.
             this.switchQueue("driver");
             await this.runQueue(this.chan_driver);
         }
@@ -613,9 +619,10 @@ class Switchboard {
        }
     }
 
-    FFICall(coid) {
+    FFICall(coid, name) {
         this.switchQueue("FFI");
         this.FFICoID = coid;
+        this.FFIname = name;
     }
     
     async FFIReturn(coid, f) {
@@ -625,6 +632,7 @@ class Switchboard {
             let qn = this.previous;
             this.switchQueue(qn);
             this.FFICoID = 0;
+            this.FFIname = "";
             switch (qn) {
             case "driver":
                 this.enqueueUrgent("driver", f);
@@ -2006,6 +2014,7 @@ class ABI {
         this.imp_mixrt_host = builtins(abi);  // see builtins.js
         this.stdout = new Array();
         this.stderr = new Array();
+        this.mixModInstances = new Map();
     }
 
     update() {
@@ -2049,20 +2058,18 @@ class ABI {
         this.setDebugFlags();
     }
 
-    async mixLink(mixmod) {
+    async mixAddCode(codeID, mixmod) {
         let groovebox_build_min_a = WebAssembly.Module.customSections(mixmod, "mix_grooveboxBuildMin");
-        if (groovebox_build_min_a.length > 0 && "804" != "unset") {
+        if (groovebox_build_min_a.length > 0 && "867" != "unset") {
             let gbm = new Int32Array(groovebox_build_min_a[0])[0];
-            if (gbm > parseInt("804")) {
-                throw new Error("This version of GrooveBox is too old: required build: " + gbm + ", but this is build: " + "804");
+            if (gbm > parseInt("867")) {
+                throw new Error("This version of GrooveBox is too old: required build: " + gbm + ", but this is build: " + "867");
             }
         };
         let consts_size_buf = WebAssembly.Module.customSections(mixmod, "mix_constsLength")[0];
         let consts_size = new Int32Array(consts_size_buf)[0];
         let table_size_buf = WebAssembly.Module.customSections(mixmod, "mix_tableLength")[0];
         let table_size = new Int32Array(table_size_buf)[0];
-        console.log("consts: ", consts_size);
-        console.log("table: " , table_size);
         let consts_addr = this.instance.exports.malloc(consts_size);
         let table_base = this.table.length;
         this.table.grow(table_size);
@@ -2096,9 +2103,22 @@ class ABI {
               mixrt: mixrt
             };
         let p = await WebAssembly.instantiate(mixmod, imports);
-        p.exports.mix_init();
+        this.mixModInstances.set(codeID, p);
+        if (p.exports.mix_initAdd != undefined) {
+            p.exports.mix_initAdd();   // modern
+        }
     }
-    
+
+    async mixLinkCode(codeID) {
+        let p = this.mixModInstances.get(codeID);
+        if (p == undefined) return;
+        if (p.exports.mix_initLink != undefined) {
+            p.exports.mix_initLink();   // modern
+        } else {
+            p.exports.mix_init();      // legacy
+        }
+    }
+
     seedRNG() {
         // set the seed of the PRNG on the C side:
         this.instance.exports.srandom(Math.random() * 0x7fffffff);
@@ -2294,6 +2314,7 @@ class DrvParams {
         this.fgBlocked = undefined;
         this.serial = undefined;
         this.time = undefined;
+        this.initFlag = 0;
     }
 
     getInstID() { return this.instID }
@@ -2366,6 +2387,9 @@ class DrvParams {
     getTime() { return this.time }
     setTime(x) { this.time = x }
 
+    getInitFlag() { return this.initFlag }
+    setInitFlag(x) { this.initFlag = x }
+
     encodeMessageType(msgType, buf) {
         this.write16(buf, msgType);
     }
@@ -2393,6 +2417,7 @@ class DrvParams {
         this.encodeFgBlocked(buf);
         this.encodeSerial(buf);
         this.encodeTime(buf);
+        this.encodeInitFlag(buf);
         buf.push(0, 0);
     }
 
@@ -2482,6 +2507,10 @@ class DrvParams {
 
     encodeTime(buf) {
         if (this.time !== undefined) this.wint8(buf, 0x1015, this.time);
+    }
+
+    encodeInitFlag(buf) {
+        if (this.serial !== undefined) this.wint4(buf, 0x1016, this.initFlag);
     }
 
     wstr255(buf, code, x) {
@@ -2595,6 +2624,8 @@ class DrvParams {
                 this.serial = this.rint4(buf); break;
             case 0x1015:
                 this.time = this.rint8(buf); break;
+            case 0x1016:
+                this.initFlag = this.rint4(buf); break;
             default:
                 // ignore
             };
@@ -3109,6 +3140,8 @@ class DrvSendCode extends DrvMessage {
             codeBytes[2] == 115 && codeBytes[3] == 109) {
             let mod = await WebAssembly.compile(code);
             this.state.mixCode.set(this.params.codeID, mod);
+            this.state.mixCodeName.set(this.params.codeID, this.params.name);
+            await this.state.wasm.mixAddCode(this.params.codeID, mod);
         } else {
             // TODO: isByteCode check
             if (this.params.name === undefined)
@@ -3130,7 +3163,7 @@ class DrvSendCode extends DrvMessage {
                 throw new Error(msg);
             };
             this.state.mixCode.set(this.params.codeID, "BYTE");
-            this.state.haveByteCode = true;
+            this.state.mixCodeName.set(this.params.codeID, this.params.name);
         }
     }
 }
@@ -3155,14 +3188,49 @@ class DrvLinkCode extends DrvMessage {
     }
 
     async exec(chan, serialRef) {
+        let wasm = this.state.wasm;
+        let mixrt = wasm.instance.exports;
         if (this.params.instID !== 0) throw new Error("DrvLinkCode: only one instance supported");
         if (this.params.codeID === undefined)
             throw new Error("DrvLinkCode: missing codeID param");
         let mod = this.state.mixCode.get(this.params.codeID);
         if (mod === undefined)
             throw new Error("DrvLinkCode: unknown code reference");
-        if (mod != "BYTE")
-            await this.state.wasm.mixLink(mod);
+        let name = this.state.mixCodeName.get(this.params.codeID);
+        let ptr_name = allocCopyInCString(wasm, name);
+        let linked = 0;
+        if (mod == "BYTE") {
+            if (mixrt.mixrt_interpreterLinkUnitYG != undefined) {
+                let ok =
+                    wasm.call(mixrt.mixrt_interpreterLinkUnitYG, ptr_name);
+                if (!ok) {
+                    let msg = copyOutCString(wasm, wasm.call(mixrt.mixrt_getErrorMessage), 65535);
+                    throw new Error(msg);
+                };
+                linked = 1;
+            } else {
+                let ok = wasm.call(mixrt.mixrt_interpreterLinkCodeYG);
+                if (!ok) {
+                    let msg = copyOutCString(wasm, wasm.call(mixrt.mixrt_getErrorMessage), 65535);
+                    throw new Error(msg);
+                }
+            }
+        } else {
+            await wasm.mixLinkCode(this.params.codeID);
+            linked = 1;
+        };
+        if (this.params.initFlag) {
+            let mixrt_init = mixrt.mixrt_setInitLibraryRecursively;
+            if (!linked || mixrt_init == undefined) {
+                throw new Error("This version of mixrt doesn't support dynamic loading");
+            };
+            let ok = wasm.call(mixrt_init, ptr_name);
+            if (!ok) {
+                let msg = copyOutCString(wasm, wasm.call(mixrt.mixrt_getErrorMessage), 65535);
+                throw new Error(msg);
+            }
+        };
+        free(wasm, ptr_name);
     }
 }
 
@@ -3198,14 +3266,6 @@ class DrvToInit extends DrvMessage {
         if (s !== states.STATE_INIT && s !== states.STATE_INIT_DONE && s !== states.STATE_EXIT && s !== states.STATE_IDLE) {
             throw new Error("state mismatch after ToInit: " + s);
         }
-        if (this.state.haveByteCode) {
-            console.log("call link")
-            let ok = wasm.call(mixrt.mixrt_interpreterLinkCodeYG);
-            if (!ok) {
-                let msg = copyOutCString(wasm, wasm.call(mixrt.mixrt_getErrorMessage), 65535);
-                throw new Error(msg);
-            }
-        };
         wasm.call(mixrt.mixrt_reqInit);
         setRequestQueue(wasm, this.queue);
         if (this.params.serial !== undefined)
@@ -4061,7 +4121,7 @@ if (worker_self === undefined) {
 let exiting = false;
 
 function w_setup() {
-    console.log("GROOVEBOX_BUILD (machine-wasm)", "804");
+    console.log("GROOVEBOX_BUILD (machine-wasm)", "867");
     if (!isLittleEndian()) {
         // Cannot support big endian because Wasm is little endian, and
         // typed arrays follow the endianness of the system. This would
@@ -4782,7 +4842,7 @@ async function w_fficall(drvRetMsg) {
     };
     let config = worker_self.state.config;
     let hub = worker_self.hub;
-    worker_self.state.sboard.FFICall(drvRetMsg.params.getCoroutine());
+    worker_self.state.sboard.FFICall(drvRetMsg.params.getCoroutine(), drvRetMsg.params.getName());
     let resp_topic = config.topicBase() + "/drvFFICall";
     if (worker_self.state.config.debugMask & debugFlags.DEBUG_MESSAGES)
         console.log("FFI call", drvRetMsg);
@@ -4791,7 +4851,7 @@ async function w_fficall(drvRetMsg) {
 }
 
 async function w_fficall_local(name, coroutine, args) {
-    worker_self.state.sboard.FFICall(coroutine);
+    worker_self.state.sboard.FFICall(coroutine, name);
     let hub = worker_self.hub;
     let payload =
         { name: name,
