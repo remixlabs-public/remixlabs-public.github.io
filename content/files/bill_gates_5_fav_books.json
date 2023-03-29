@@ -1,0 +1,43 @@
+{
+  "title": "5 of my all-time favorite books",
+  "subtitle": "I decided to try something different for my list of holiday books this year.",
+  "byline": "By Bill Gates | November 21, 2022 • 3 minute read",
+  "intro_md": "![](https://assets.gatesnotes.com/8a5ac0b3-6095-00af-c50a-89056fbe4642/e85612bb-7099-421e-ab28-451245268fd4/3be1ef9c6328484488ba2bcb72587723.jpg)\n\nThe holidays are a great time for annual traditions. Like many people, I love to spend the end of the year celebrating the holidays with my family. (We usually wear matching pajamas on Christmas.) I also enjoy sitting down to write my annual list of holiday books, which I’ve done around this time of year for the last decade. It’s always a fun opportunity for me to reflect on everything I’ve read recently.\n\nThis time, though, I decided to try something different. Rather than limit myself to things I’ve read over the previous twelve months, I instead picked books regardless of when I finished them.\n\nOne of the selections has been a favorite of mine since middle school. Another is a brand-new memoir that I just finished. This isn’t a complete list of my favorite books of all time—that list would include a lot more [Vaclav Smil](https://www.gatesnotes.com/How-the-World-Really-Works) and [Elizabeth Kolbert](https://www.gatesnotes.com/The-Sixth-Extinction). But all five are books that I have recommended to my family and friends over the years.\n\nI hope you find something new to read this winter—and that you and your loved ones enjoy celebrating your favorite traditions together over the holiday season.",
+  "items": [
+    {
+      "description": "Paul Allen and I fell in love with Heinlein when we were just kids, and this book is still one of my favorite sci-fi novels of all time. It tells the story of a young man who returns to Earth after growing up on Mars and starts a new religion. I think the best science fiction pushes your thinking about what’s possible in the future, and Heinlein managed to predict the rise of hippie culture years before it emerged.",
+      "entity": "bookmark",
+      "image_url": "https://assets.gatesnotes.com/8a5ac0b3-6095-00af-c50a-89056fbe4642/74486de9-69a2-4dee-847d-da8f8f9d8f46/c33be36f2a5d4872840e0ea21cf33d00.jpg",
+      "name": "Best introduction to grownup sci-fi: Stranger in a Strange Land, by Robert Heinlein",
+      "url": "https://www.gatesnotes.com/Stranger-in-a-Strange-Land"
+    },
+    {
+      "description": "This book came out this month, so it’s the most recent one I’ve read on my list. If you’re a U2 fan, there is a good chance you already plan to check it out. Even if you’re not, it’s a super fun read about how a boy from the suburbs of Dublin grew up to become a world-famous rock star and philanthropist. I’m lucky enough to call Bono a friend, but a lot of the stories he tells in Surrender were new to me.",
+      "entity": "bookmark",
+      "image_url": "https://assets.gatesnotes.com/8a5ac0b3-6095-00af-c50a-89056fbe4642/f93ecd85-1ca9-47e6-9bbe-b84afd82e5bf/7d66492b66414b64aa84e294a62a3f84.jpg",
+      "name": "Best memoir by a rock star: Surrender, by Bono",
+      "url": "https://www.gatesnotes.com/Surrender"
+    },
+    {
+      "description": "I can’t read enough about Abraham Lincoln, and this is one of the best books on the subject. It feels especially relevant now when our country is once again facing violent insurrection, difficult questions about race, and deep ideological divides. Goodwin is one of America’s best biographers, and Team of Rivals is arguably her masterpiece.",
+      "entity": "bookmark",
+      "image_url": "https://assets.gatesnotes.com/8a5ac0b3-6095-00af-c50a-89056fbe4642/82509509-5f6f-4942-827a-d3da0e29f8c8/e5066a30b76a4160ada4f114f854e5b2.jpg",
+      "name": "Best guide to leading a country: Team of Rivals, by Doris Kearns Goodwin",
+      "url": "https://www.gatesnotes.com/Team-of-Rivals"
+    },
+    {
+      "description": "This book from 1974 is a must-read for anyone who plays tennis, but I think even people who have never played will get something out of it. Gallwey argues that your state of mind is just as important—if not more important—than your physical fitness. He gives excellent advice about how to move on constructively from mistakes, which I’ve tried to follow both on and off the court over the years.",
+      "entity": "bookmark",
+      "image_url": "https://assets.gatesnotes.com/8a5ac0b3-6095-00af-c50a-89056fbe4642/8ed5e4c0-4c86-444c-9135-196898f4ba44/9487faa6b7934d51a4e7505e21811cf9.jpg",
+      "name": "Best guide to getting out of your own way: The Inner Game of Tennis, by Timothy Gallwey",
+      "url": "https://www.gatesnotes.com/The-Inner-Game-of-Tennis"
+    },
+    {
+      "description": "The history of chemistry is filled with quirky characters like Dimitri Mendeleyev, the Russian scientist who first proposed the periodic table after it allegedly came to him in a dream. Strathern’s book traces that history all the way back to its origins in ancient Greece. It’s a fascinating look at how science develops and how human curiosity has evolved over the millennia.",
+      "entity": "bookmark",
+      "image_url": "https://assets.gatesnotes.com/8a5ac0b3-6095-00af-c50a-89056fbe4642/2c6da631-d220-4312-a1e4-26e50c23a361/78f83da647ef4a47908e8ae9514dfbe7.jpg",
+      "name": "Best book about the periodic table: Mendeleyev’s Dream, by Paul Strathern",
+      "url": "https://www.gatesnotes.com/Mendeleyevs-Dream"
+    }
+  ]
+}
